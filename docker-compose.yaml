@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.9"
 
 services:
   reader:
@@ -13,3 +13,24 @@ services:
       PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
       PUPPETEER_EXECUTABLE_PATH: "/usr/bin/google-chrome-stable"
     command: node build/server.js
+    networks:
+      - coolify
+    labels:
+      - "traefik.enable=true"
+      # HTTP (redirect to HTTPS)
+      - "traefik.http.routers.reader-http.rule=Host(`reader.ranked.hu`)"
+      - "traefik.http.routers.reader-http.entrypoints=http"
+      - "traefik.http.routers.reader-http.middlewares=redirect-to-https@docker"
+      # HTTPS
+      - "traefik.http.routers.reader-https.rule=Host(`reader.ranked.hu`)"
+      - "traefik.http.routers.reader-https.entrypoints=https"
+      - "traefik.http.routers.reader-https.tls=true"
+      - "traefik.http.routers.reader-https.tls.certresolver=letsencrypt"
+      # Target port inside container
+      - "traefik.http.services.reader.loadbalancer.server.port=3000"
+      # Optional: mark as managed by Coolify
+      - "coolify.managed=true"
+
+networks:
+  coolify:
+    external: true
